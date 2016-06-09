@@ -70,14 +70,26 @@ while True:
         print("Last:")
         time = parsed_json[0]['at']
         port = parsed_json[0]['metadata']['port']
+        rssi = parsed_json[0]['metadata']['rssi']
+        snr = parsed_json[0]['metadata']['snr']
+        sf = parsed_json[0]['metadata']['sf_used']
         enc_payload = bytes.fromhex(parsed_json[0]['value'])
         payload = mote.EncryptPayload(port, enc_payload, Mote_DevAddr, 0, fcnt)
         payload_str = ''.join('{:02X}'.format( x ) for x in payload)
         print(str(port) + '\t' + time + '\t' + str(parsed_json[0]['metadata']['fcnt']) + '\t' + parsed_json[0]['value'] + '\t' + payload_str)
 
+        json_send = {
+            'at': time,
+            'rssi': rssi,
+            'snr': snr,
+            'datr': sf,
+            'fcnt': fcnt,
+            'data': payload_str
+        }
+        print(json.dumps(json_send))
         sock = socket.socket(socket.AF_INET, # Internet
                          socket.SOCK_DGRAM) # UDP
-        sock.sendto(bytes(str(fcnt) + ',' + payload_str, 'UTF-8'), (UDP_IP, UDP_PORT))
+        sock.sendto(bytes(json.dumps(json_send), 'UTF-8'), (UDP_IP, UDP_PORT))
         fcnt_prev = fcnt
 
     # wait a moment before fetching new packets
