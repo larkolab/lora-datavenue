@@ -10,6 +10,7 @@ import datetime
 import credentials
 
 Mote_DevAddr = 0x014C605E
+mote_devaddr = '01:4C:60:5E'
 
 DatasourceID = 'e84cf38c68254d58979306a7fccd20c0'
 StreamID = 'b9e841f17c564566829212a16e5797b3'
@@ -79,6 +80,7 @@ while True:
         print(str(port) + '\t' + time + '\t' + str(parsed_json[0]['metadata']['fcnt']) + '\t' + parsed_json[0]['value'] + '\t' + payload_str)
 
         json_send = {
+            'mote': mote_devaddr,
             'at': time,
             'rssi': rssi,
             'snr': snr,
