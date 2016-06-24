@@ -9,6 +9,14 @@ from time import sleep
 import datetime
 import credentials
 
+from sense_hat import SenseHat
+
+sense = SenseHat()
+def color_matrix():
+    sense.clear([255,5,5])
+    sleep(0.5)
+    sense.clear([0,0,0])
+
 Mote_DevAddr = 0x014C605E
 mote_devaddr = '01:4C:60:5E'
 
@@ -45,10 +53,24 @@ mote.ActivateAbp( Mote_DevAddr,
 fcnt_prev = -1
 
 while True:
-    print('Get stream values:')
-    r = requests.get(endpoint, headers=headers)
-    print(r.status_code)
-    #print(r.text)
+    #print('Get stream values:')
+    try:
+        r = requests.get(endpoint, headers=headers)
+    except requests.exceptions.Timeout:
+        print('ERROR: Timeout')
+        print(r.status_code)
+        sleep(30)
+        continue
+    except requests.exceptions.TooManyRedirects:
+        print('ERROR: Too Many Redirects')
+        print(r.status_code)
+        sleep(30)
+        continue
+    except requests.exceptions.RequestException as e:
+        print('ERROR' + str(e))
+        print(r.status_code)
+        sleep(30)
+        continue
 
     parsed_json = json.loads(r.text)
     num_frames = len(parsed_json)
@@ -62,12 +84,13 @@ while True:
         fcnt = frame['metadata']['fcnt']
         enc_payload = bytes.fromhex(frame['value'])
         payload = mote.EncryptPayload(port, enc_payload, Mote_DevAddr, 0, fcnt)
-        payload_str = ''.join('{:02X}'.format( x ) for x in payload)
-        print(str(port) + '\t' + time + '\t' + str(frame['metadata']['fcnt']) + '\t' + frame['value'] + '\t' + payload_str)
+        #payload_str = ''.join('{:02X}'.format( x ) for x in payload)
+        #print(str(port) + '\t' + time + '\t' + str(frame['metadata']['fcnt']) + '\t' + frame['value'] + '\t' + payload_str)
 
     # Only send the last packet to UDP (if not already sent)
     fcnt = parsed_json[0]['metadata']['fcnt']
     if fcnt != fcnt_prev:
+        color_matrix()
         print("Last:")
         time = parsed_json[0]['at']
         port = parsed_json[0]['metadata']['port']
@@ -95,4 +118,4 @@ while True:
         fcnt_prev = fcnt
 
     # wait a moment before fetching new packets
-    sleep(5)
+    sleep(30)
